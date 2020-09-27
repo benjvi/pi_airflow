@@ -11,10 +11,10 @@
     airflow_extras: postgres,ssh,redis
     force_build_image: True
     airflow_restart_policy: unless-stopped
-    airflow_data_volume: ./airflow_data
+    airflow_data_volume: /home/ansible/airflow/airflow_data
     postgres_restart_policy: unless-stopped
     postgres_password: dummy
-    postgres_data_volume: ./postgres_data
+    postgres_data_volume: /home/ansible/airflow/postgres_data
   
 
   tasks:
