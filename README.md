@@ -47,13 +47,13 @@ The project has been tested on Raspberry Pi 3B+ and 4B.
 	ansible-playbook playbook_airflow.yml
 	```
 
-        The playbook will do the following:
+   The playbook will do the following:
         
-        - copy Airflow Dockerfile and entrypoint.sh to control node.
-        - build Airflow Docker image on control node based on Dockerfile.
-        - setup dedicated bridge Docker network.
-        - run Postgres container and connect it to the bridge network.
-        - run Airflow container based on created image and connect it to the bridge network. The entrypoint will initialize the database, start the scheduler and the webserver
+   - copy Airflow Dockerfile and entrypoint.sh to control node.
+   - build Airflow Docker image on control node based on Dockerfile.
+   - setup dedicated bridge Docker network.
+   - run Postgres container and connect it to the bridge network.
+   - run Airflow container based on created image and connect it to the bridge network. The entrypoint will initialize the database, start the scheduler and the webserver
 
 
 The Airflow UI should now be available on port 8080 of your control node.
