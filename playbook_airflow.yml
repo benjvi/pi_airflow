@@ -1,0 +1,111 @@
+---
+- hosts: red
+  vars:
+    docker_network_name: airflow-net
+    airflow_local_dockerfile_dir: .
+    airflow_remote_dockerfile_dir: /home/ansible/airflow
+    python_maj_version: 3
+    python_min_version: 7
+    airflow_version: 1.10.12
+    airflow_home: /app/airflow
+    airflow_extras: postgres,ssh,redis
+    force_build_image: True
+    airflow_restart_policy: unless-stopped
+    airflow_data_volume: ./airflow_data
+    postgres_restart_policy: unless-stopped
+    postgres_password: dummy
+    postgres_data_volume: ./postgres_data
+  
+
+  tasks:
+
+  - name: get username of current user.
+    command: whoami
+    register: username
+
+  - name: get uid of current user.
+    command: id -u
+    register: uid
+
+  - name: get gid of current user.
+    command: id -g
+    register: gid
+
+  - name: ensure remote host directory for Dockerfile is setup.
+    file:
+      path: "{{ airflow_remote_dockerfile_dir }}"
+      state: directory
+      mode: "0755"
+    
+  - name: copy Dockerfile from local control machine to remote machine.
+    copy:
+      src: "{{ airflow_local_dockerfile_dir }}/Dockerfile"
+      dest: "{{ airflow_remote_dockerfile_dir }}"
+      mode: "0664"
+ 
+  - name: copy entrypoint.sh from local control machine to remote machine.
+    copy:
+      src: "{{ airflow_local_dockerfile_dir }}/entrypoint.sh"
+      dest: "{{ airflow_remote_dockerfile_dir }}"
+      mode: "0755"
+       
+  - name: ensure build of airflow docker image.
+    docker_image:
+       name: airflow_rpi
+       build:
+         path: "{{ airflow_remote_dockerfile_dir }}"
+         args:
+           PYTHON_MAJ_VER: "{{ python_maj_version }}"
+           PYTHON_MIN_VER: "{{ python_min_version }}"
+           AIRFLOW_VERSION: "{{ airflow_version }}"
+           AIRFLOW_HOME: "{{ airflow_home }}"
+           AIRFLOW_EXTRAS: "{{ airflow_extras }}"
+           UID: "{{ uid.stdout }}"
+           GID: "{{ gid.stdout }}"
+       state: present
+       force_source: "{{ force_build_image }}"
+  
+  - name: ensure docker network is setup.
+    docker_network:
+      name: "{{ docker_network_name }}"
+      state: present
+      driver: bridge
+  
+  - name: ensure postgres container is running.
+    docker_container:
+      name: postgres
+      image: postgres
+      state: started
+      restart_policy: "{{ postgres_restart_policy }}"
+      env:
+        POSTGRES_PASSWORD: "{{ postgres_password }}"
+        POSTGRES_DB: airflow
+      networks:
+        - name: "{{ docker_network_name }}"
+      purge_networks: True
+      volumes:
+        - "{{ postgres_data_volume }}:/var/lib/postgresql/data"
+  
+  
+  - name: ensure host directory for airflow data is setup, including dags sub-directory.
+    file:
+      path: "{{ airflow_data_volume }}/dags"
+      state: directory
+      mode: "0755"
+  
+  - name: ensure airflow container is running.
+    docker_container:
+      name: airflow
+      image: airflow_rpi
+      state: started
+      restart_policy: "{{ airflow_restart_policy }}"
+      env:
+        AIRFLOW__CORE__EXECUTOR: LocalExecutor
+        AIRFLOW__CORE__SQL_ALCHEMY_CONN: "postgresql+psycopg2://postgres:{{ postgres_password }}@postgres/airflow" 
+      ports:
+        - 8080:8080
+      networks:
+        - name: "{{ docker_network_name }}"
+      purge_networks: yes
+      volumes:
+       - "{{ airflow_data_volume }}:{{ airflow_home }}"       

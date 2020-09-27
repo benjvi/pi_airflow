@@ -1,0 +1,2 @@
+- name: docker_setup
+  src: https://github.com/ellolo/ansible-docker_setup

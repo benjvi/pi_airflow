@@ -1,0 +1,10 @@
+[blue]
+localhost ansible_connection=local
+
+[red]
+pi-red.fritz.box
+
+[raspberries]
+localhost
+pi-red.fritz.box
+pi-silver.fritz.box

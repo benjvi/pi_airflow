@@ -1,0 +1,46 @@
+---
+- hosts: rasp
+  become: yes
+  
+  vars:
+    username: ansible
+    hostname: pi-blue
+    update: False
+    docker_user: ansible
+    private_network_dns: 192.168.178.1
+    install_docker_compose: false
+
+  tasks:
+
+  - name: ensure apt package update and upgrade.
+    apt:
+      upgrade: yes
+      update_cache: yes
+    when: update == True   
+
+  - name: ensure vim, nmap and ntp are installed.
+    apt:
+      name:
+      - vim
+      - nmap
+      - ntp
+      state: present
+
+  - name: ensure aliases are set.
+    copy:
+      src: .bash_aliases
+      dest: /home/{{ username }}/.bash_aliases.
+  
+  - name: change hostname.
+    template:
+      src: "hostname.j2"
+      dest: "/etc/hostname"
+
+  - name: ensure ssh port is open for connections.
+    systemd:
+      name: ssh
+      state: started
+      enabled: yes
+
+  roles:
+  - role: ansible-docker_setup
