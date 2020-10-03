@@ -1,9 +1,10 @@
 ---
-- hosts: rasp
+- hosts: blue
   become: yes
   
   vars:
     username: ansible
+    group: ansible
     hostname: pi-blue
     update: False
     docker_user: ansible
@@ -29,7 +30,7 @@
   - name: ensure aliases are set.
     copy:
       src: .bash_aliases
-      dest: /home/{{ username }}/.bash_aliases.
+      dest: "/home/{{ username }}/.bash_aliases"
   
   - name: change hostname.
     template:
@@ -42,5 +43,35 @@
       state: started
       enabled: yes
 
+  - name: Install pyenv.
+    git:
+      repo: https://github.com/yyuu/pyenv.git
+      dest: "/home/{{ username }}/.pyenv"
+
+  - name: Install pyenv-virtualenv plugin.
+    git:
+      repo: https://github.com/yyuu/pyenv-virtualenv.git
+      dest: "/home/{{ username }}/.pyenv/plugins/pyenv-virtualenv"
+
+  - name: change ownership of pyenv directory.
+    file:
+      path: "/home/{{ username }}/.pyenv"
+      state: directory
+      recurse: yes
+      owner: "{{ username }}"
+      group: "{{ group }}"
+
+  - name: Add path etc to .bashrc.
+    lineinfile:
+      dest: "/home/{{ username }}/.bashrc"
+      state: present
+      create: yes
+      line: "{{ item }}"
+    with_items:
+      - 'export PYENV_ROOT="$HOME/.pyenv"'
+      - 'export PATH="$PYENV_ROOT/bin:$PATH"'
+      - 'eval "$(pyenv init -)"'
+      - 'eval "$(pyenv virtualenv-init -)"'
+ 
   roles:
   - role: ansible-docker_setup
