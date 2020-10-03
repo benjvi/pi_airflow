@@ -1,0 +1,5 @@
+alias l='ls -lA'
+alias ll='ls -l'
+alias ..='cd ..'
+alias ...='cd ../../'
+alias vi='vim'
