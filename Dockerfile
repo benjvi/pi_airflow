@@ -45,4 +45,9 @@ ENV AIRFLOW__CORE__LOAD_EXAMPLES=False
 ENV AIRFLOW__WEBSERVER__EXPOSE_CONFIG=True
 ENV PATH="/home/airflow/.local/bin:${PATH}"
 
+USER root
+RUN mkdir -p "/app/airflow" && chmod 777 /app/airflow
+
+USER airflow
+
 ENTRYPOINT [ "/entrypoint.sh" ]
